@@ -11,3 +11,4 @@ export type { Scope, CleanupReport, Finalizer } from "./scope";
 export { createScope, scoped, acquireUseRelease } from "./scope";
 export type { Stream } from "./stream";
 export { stream, runStream, fromValues, streamFromEffect, mapStream, mapStreamError, recoverStream, flatMapStream } from "./stream";
+export { pipe } from "./pipe";

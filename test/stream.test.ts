@@ -1,5 +1,6 @@
+import { pipe } from "../src";
 import { describe, it, expect, vi } from "vitest";
-import { of, pipe } from "rxjs";
+import { of} from "rxjs";
 import { success, failure, stream, runStream, fromValues, streamFromEffect, mapStream, mapStreamError, recoverStream, flatMapStream, fail, succeed, type Stream } from "../src";
 const collect = <A,E>(source: Stream<A,E>) => {
   const values: unknown[] = [];

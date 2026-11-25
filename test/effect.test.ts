@@ -1,5 +1,6 @@
+import { pipe } from "../src";
 import { describe, it, expect, expectTypeOf, vi } from "vitest";
-import { EMPTY, NEVER, Observable, of, pipe, throwError, timer, map as rxMap, Subject, switchMap } from "rxjs";
+import { EMPTY, NEVER, Observable, of, throwError, timer, map as rxMap, Subject, switchMap } from "rxjs";
 import {
   type Effect, type Result, access, fail, flatMap, fromObservable, map,
   mapError, provide, recover, retryExpected, run, succeed, suspend, sync,

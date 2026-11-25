@@ -1,4 +1,5 @@
-import { pipe, timer, map as rxMap, Subject, switchMap } from "rxjs";
+import { pipe } from "../src";
+import { timer, map as rxMap, Subject, switchMap } from "rxjs";
 import { type Effect, succeed, fail, flatMap, fromObservable, run } from "../src";
 
 export const checkStock = (count: number): Effect<number, "NegativeCount"> =>

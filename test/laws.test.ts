@@ -1,6 +1,7 @@
+import { pipe } from "../src";
 import { describe, it, expect, vi } from "vitest";
 import fc from "fast-check";
-import { of, concat, throwError, pipe } from "rxjs";
+import { of, concat, throwError} from "rxjs";
 import { TestScheduler } from "rxjs/testing";
 import { type Effect, type Result, run, succeed, fail, map, flatMap, retryExpected, retryWith, suspend, tryObservable } from "../src";
 const collect = <A,E>(effect: Effect<A,E>) => {
@@ -15,7 +16,7 @@ describe("algebraic laws for pure total projections", () => {
     expect(collect(pipe(source,map(f),map(g)))).toEqual(collect(pipe(source,map((x:number) => g(f(x))))));
   })));
   it("monad identity and associativity, including typed failures", () => fc.assert(fc.property(fc.integer(), n => {
-    const f = (x:number) => x < 0 ? fail("Negative") : succeed(x+1);
+    const f = (x:number): Effect<number, "Negative"> => x < 0 ? fail("Negative") : succeed(x+1);
     const g = (x:number) => succeed(x*2);
     const source = f(n);
     expect(collect(pipe(succeed(n),flatMap(f)))).toEqual(collect(f(n)));

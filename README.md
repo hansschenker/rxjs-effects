@@ -22,8 +22,7 @@ type Stream<A, E = never, R = unknown> = {
 An Effect emits exactly one outcome on normal termination, after source completion. A Stream emits zero or more successes, optionally ending with one typed failure. Expected errors are values; unexpected defects use the RxJS error channel. Cancellation is silent to the cancelled subscriber. Each connection owns its execution unless a source explicitly shares it.
 
 ```ts
-import { pipe } from "rxjs";
-import { type Effect, succeed, fail, flatMap, run } from "./src";
+import { type Effect, succeed, fail, flatMap, run, pipe } from "./src";
 
 const checkStock = (count: number): Effect<number, "NegativeCount"> =>
   count < 0 ? fail("NegativeCount") : succeed(count);
@@ -42,7 +41,7 @@ run(program)(undefined).subscribe(console.log);
 | Area | Operations |
 | --- | --- |
 | Construction | succeed, fail, sync, suspend, fromObservable, tryObservable |
-| Composition | map, flatMap, mapError, recover |
+| Composition | pipe, map, flatMap, mapError, recover |
 | Dependencies | access, provide |
 | Coordination | all, race, coordinate (Merge / Concat / Switch / Exhaust) |
 | Time | timeout, retryExpected, retryWith |

@@ -9,6 +9,7 @@
 | tryObservable | Explicitly map source errors; cardinality remains a defect |
 | access / provide | Read / supply environment |
 | run | Cold execution boundary; single-result validation |
+| pipe | Value-first functional composition |
 | map / mapError | Transform value / failure |
 | flatMap / recover | Dependent composition / typed recovery |
 | all | Parallel, ordered tuple, fail-fast |
@@ -25,4 +26,4 @@
 | recoverStream | Continue with replacement stream after typed failure |
 | flatMapStream | Sequential effects; terminate on typed failure |
 
-Combinators are function-first and work with RxJS pipe. The run and runStream boundaries return standard Observables.
+Combinators are function-first. Import the value-first pipe from rxjs-effects for pipe(effect, map(f), flatMap(g)). RxJS's standalone pipe instead composes functions and is called as pipe(op1, op2)(source); Observable.pipe remains unchanged. The run and runStream boundaries return standard Observables.
