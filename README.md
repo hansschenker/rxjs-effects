@@ -1,30 +1,25 @@
 # rxjs-effects
 
-**Typed effectful computations on the RxJS execution model.**
+**Type algebra meets reactive execution.**
 
-Capture values, expected failures and required dependencies in types. Delegate execution, timing, cancellation and coordination to RxJS.
+A class-free, function-first TypeScript library for typed effectful computations and reactive sequences. RxJS 7.8.2 provides the execution substrate; there is no separate fiber runtime, no generator syntax and no application-level async/await.
 
-## Design principles
-
-- RxJS 7.8.2 as the execution substrate; no separate fiber runtime.
-- Class-free, function-first TypeScript; no application-level async/await or generator syntax.
-- Cold by construction when sources are cold; sharing is explicit.
-- Expected failures are discriminated-union values, not RxJS error notifications.
-- Unexpected exceptions remain defects on the Observable error channel.
-- One outcome on normal termination; cancellation delivers no further notifications.
-
-## Core contract
+## Type contracts
 
 ```ts
 type Result<A, E> =
-  | { kind: "Success"; value: A }
-  | { kind: "Failure"; error: E };
+  | { readonly kind: "Success"; readonly value: A }
+  | { readonly kind: "Failure"; readonly error: E };
 
 type Effect<A, E = never, R = unknown> =
   (environment: R) => Observable<Result<A, E>>;
+
+type Stream<A, E = never, R = unknown> = {
+  readonly open: (environment: R) => Observable<Result<A, E>>;
+};
 ```
 
-The public run boundary defers evaluation until subscription and verifies that the source completes with exactly one outcome. A source that emits zero or multiple outcomes is a contract violation, not a typed domain failure. A source may never terminate.
+An Effect emits exactly one outcome on normal termination, after source completion. A Stream emits zero or more successes, optionally ending with one typed failure. Expected errors are values; unexpected defects use the RxJS error channel. Cancellation is silent to the cancelled subscriber. Each connection owns its execution unless a source explicitly shares it.
 
 ```ts
 import { pipe } from "rxjs";
@@ -42,21 +37,43 @@ run(program)(undefined).subscribe(console.log);
 // { kind: "Success", value: 20 }
 ```
 
-## Start locally
+## Library surface
+
+| Area | Operations |
+| --- | --- |
+| Construction | succeed, fail, sync, suspend, fromObservable, tryObservable |
+| Composition | map, flatMap, mapError, recover |
+| Dependencies | access, provide |
+| Coordination | all, race, coordinate (Merge / Concat / Switch / Exhaust) |
+| Time | timeout, retryExpected, retryWith |
+| Resource lifetime | createScope, scoped, acquireUseRelease |
+| Typed sequences | stream, runStream, fromValues, streamFromEffect, mapStream, mapStreamError, recoverStream, flatMapStream |
+
+## Execution contract
+
+- run is cold when its sources are cold and enforces single-result cardinality.
+- all preserves input tuple order and fails fast on the first typed failure or defect.
+- race selects the first settled outcome, including failure.
+- coordinate keeps expected failures local to each input; runStream ends at its first typed failure.
+- scoped awaits asynchronous cleanup before publishing a result or defect. On cancellation, cleanup continues independently, and cleanup errors are sent to the explicit cancellation reporter.
+- acquireUseRelease supports synchronous acquisition and Observable-based release. Asynchronous acquisition and complete Effect-TS fiber supervision are not claimed.
+- Immediate bounded retries use RxJS queueScheduler to avoid synchronous retry recursion. Deep arbitrary nested composition is not guaranteed stack-safe.
+- Unsubscription only cancels underlying work when its source implements cancellation.
+- No automatic sharing, native push backpressure, or npm publication is implied.
+
+## Verify locally
 
 ```sh
 npm install
-npm run typecheck
-npm test
-npm run build
+npm run verify
 npm run docs:dev
 ```
 
-See the VitePress documentation for execution contracts, failure semantics and the roadmap.
+GitHub Actions runs type checking, Vitest, the Vite library build, and the VitePress documentation build. The package remains private until the release candidate passes verification and publication is explicitly requested.
 
 ## Contributors
 
 - Hans Schenker — project vision and reactive programming design.
-- ChatGPT (OpenAI) — architecture, implementation, documentation and test design.
+- **myProfessorAstra-62** — AI-assisted architecture, implementation, documentation and test design (OpenAI ChatGPT).
 
-This is an independent experimental library, inspired by fp-ts and Effect's typed effect contracts. It is not an implementation of the Effect-TS runtime.
+Independent project inspired by fp-ts, Effect's typed contracts and Reactive Extensions.

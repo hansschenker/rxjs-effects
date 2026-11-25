@@ -1,6 +1,6 @@
 {
   "name": "rxjs-effects",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
   "description": "Typed effectful computations powered by RxJS",
@@ -22,7 +22,8 @@
     "build": "vite build && tsc -p tsconfig.build.json",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run docs:build"
   },
   "peerDependencies": {
     "rxjs": "^7.8.2"
@@ -33,6 +34,7 @@
     "vite": "^6.3.5",
     "vitest": "^3.2.4",
     "vitepress": "^1.6.3",
-    "@types/node": "^22.15.0"
+    "@types/node": "^22.15.0",
+    "fast-check": "^4.1.1"
   }
 }

@@ -1,23 +1,19 @@
-# Roadmap
+# Release scope
 
-## M01 — Typed single-result core (v0.1)
+The 1.0 release candidate consolidates the existing project rather than creating a new runtime.
 
-Result, Effect, constructors, typed sequential composition, explicit dependency supply, recovery, bounded retry, timeout, single-outcome validation, and lifecycle tests.
+| Milestone | Implementation |
+| --- | --- |
+| M01 — Typed Effect core | Implemented |
+| M02 — Coordination | all, race, coordinate, retry policies |
+| M03 — Resource safety | Scope, LIFO asynchronous finalizers, scoped acquisition/use/release |
+| M04 — Typed sequences | Separate Stream abstraction, transformation, recovery and sequential composition |
+| M05 — Verification | Runtime, type, virtual-time, lifecycle and property-based tests |
 
-## M02 — Coordination
+## Release gate
 
-Effect-aware parallel composition, race contracts, retry schedules, virtual-time tests, and explicit sharing policies.
+Run npm run verify. A release candidate is not a verified stable release until type checking, tests, library build and documentation build pass. Do not publish automatically.
 
-## M03 — Resource safety
+## Explicit non-goals for 1.0
 
-Scopes, acquire/use/release, ownership, asynchronous cleanup protocol, and interruption semantics. RxJS teardown is synchronous; waiting for asynchronous finalizers needs an explicit additional contract.
-
-## M04 — Typed sequences
-
-Stream type with zero-to-many values, typed terminal failures, coordination and optional demand protocols. Do not conflate Stream with single-result Effect.
-
-## M05 — Verification
-
-Property-based algebraic laws with explicit equivalence assumptions, cancellation/termination traces, stack safety, and subscription-tree supervision.
-
-The aim is not parity with the Effect-TS runtime. New guarantees must be specified and tested before they are claimed.
+Complete compatibility with Effect-TS, arbitrary-depth stack-safe composition, asynchronous acquisition with interruption masking, automatic fiber supervision, and general backpressure are not part of this release. These would need distinct contracts and verification, not additional generic parameters alone.

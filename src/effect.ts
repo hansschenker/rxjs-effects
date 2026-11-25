@@ -1,6 +1,6 @@
 import {
   defer, of, single, map as rxMap, concatMap, catchError, timeout as rxTimeout,
-  repeat, filter, take, throwError, type Observable, type SchedulerLike
+  repeat, filter, take, throwError, materialize, reduce, subscribeOn, queueScheduler, timer, type Observable, type SchedulerLike
 } from "rxjs";
 import { success, failure, type Result } from "./result";
 
@@ -37,14 +37,26 @@ export const fromObservable =
   <A, R = unknown>(factory: (environment: R) => Observable<A>): Effect<A, never, R> =>
   environment => defer(() => factory(environment)).pipe(rxMap(success));
 
-// Explicitly translate source errors to expected domain failures.
-// Cardinality violations are checked downstream by run, outside this catch.
+// Explicitly translate source defects to domain failures. Provisional values
+// are withheld until completion; cardinality violations remain defects.
 export const tryObservable =
   <E>(toError: (cause: unknown) => E) =>
   <A, R = unknown>(factory: (environment: R) => Observable<A>): Effect<A, E, R> =>
   environment => defer(() => factory(environment)).pipe(
-    rxMap(success),
-    catchError((cause: unknown) => of(failure(toError(cause))))
+    materialize(),
+    reduce((state: { seen: boolean; result?: Result<A, E> }, notification) => {
+      switch (notification.kind) {
+        case "N":
+          if (state.seen) throw new RangeError("Effect source emitted multiple values");
+          return { seen: true, result: success(notification.value!) };
+        case "E":
+          return { seen: state.seen, result: failure(toError(notification.error)) };
+        case "C":
+          if (!state.seen) throw new RangeError("Effect source completed without a value");
+          return state;
+      }
+    }, { seen: false } as { seen: boolean; result?: Result<A, E> }),
+    rxMap(state => state.result!)
   );
 
 export const access =
@@ -99,17 +111,33 @@ export const timeout =
     rxTimeout({ first: milliseconds, scheduler, with: () => of(failure(error)) })
   );
 
-// Retry only normal typed failures, never defects. maxRetries excludes the first attempt.
-export const retryExpected =
-  (maxRetries: number) =>
+// A retry policy counts additional attempts, not total executions.
+// queueScheduler trampolines synchronous retries without forcing an async tick.
+export type RetryPolicy =
+  | { readonly kind: "Immediate"; readonly maxRetries: number }
+  | { readonly kind: "Delayed"; readonly maxRetries: number;
+      readonly milliseconds: number; readonly scheduler?: SchedulerLike };
+
+export const retryWith =
+  (policy: RetryPolicy) =>
   <A, E, R>(source: Effect<A, E, R>): Effect<A, E, R> =>
   environment => defer(() => {
+    const { maxRetries } = policy;
     if (!Number.isSafeInteger(maxRetries) || maxRetries < 0 || maxRetries >= Number.MAX_SAFE_INTEGER) {
-      return throwError(() => new RangeError("maxRetries must be a non-negative safe integer below MAX_SAFE_INTEGER"));
+      return throwError(() => new RangeError("Invalid maxRetries"));
     }
-    return run(source)(environment).pipe(
-      repeat({ count: maxRetries + 1 }),
+    if (policy.kind === "Delayed" && (!Number.isFinite(policy.milliseconds) || policy.milliseconds < 0)) {
+      return throwError(() => new RangeError("Invalid retry delay"));
+    }
+    const attempts$ = run(source)(environment).pipe(subscribeOn(queueScheduler));
+    return attempts$.pipe(
+      repeat(policy.kind === "Immediate"
+        ? { count: maxRetries + 1 }
+        : { count: maxRetries + 1, delay: () => timer(policy.milliseconds, policy.scheduler) }),
       filter((result, index) => result.kind === "Success" || index === maxRetries),
       take(1)
     );
   });
+
+export const retryExpected = (maxRetries: number) =>
+  retryWith({ kind: "Immediate", maxRetries });

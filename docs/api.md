@@ -1,23 +1,28 @@
-# Core API
+# API
 
-| Function | Contract |
+| Operation | Contract |
 | --- | --- |
 | success / failure | Construct outcome values |
-| succeed / fail | Construct immediate single-outcome Effects |
-| sync | Defer a synchronous value-producing function |
-| suspend | Defer construction of an Effect |
-| fromObservable | Lift a single-result Observable factory; preserve defects |
-| tryObservable | Explicitly map source errors into typed failures |
-| access | Read required dependencies |
-| provide | Supply the required environment |
-| run | Defer execution and enforce outcome cardinality |
-| map | Transform successful values |
-| mapError | Transform expected failures |
-| flatMap | Compose dependent Effects; union errors and intersect environments |
-| recover | Replace expected failures with another Effect |
-| timeout | Cancel work at a deadline and return a typed failure |
-| retryExpected | Re-execute only expected failures, up to the configured retry count |
+| succeed / fail | Construct one-outcome Effects |
+| sync / suspend | Defer evaluation / construction |
+| fromObservable | Lift a single-value source factory |
+| tryObservable | Explicitly map source errors; cardinality remains a defect |
+| access / provide | Read / supply environment |
+| run | Cold execution boundary; single-result validation |
+| map / mapError | Transform value / failure |
+| flatMap / recover | Dependent composition / typed recovery |
+| all | Parallel, ordered tuple, fail-fast |
+| race | First settled outcome, cancel losers |
+| coordinate | Merge, Concat, Switch or Exhaust input policy |
+| timeout | Typed failure at deadline |
+| retryExpected / retryWith | Bounded typed retry; immediate or delayed |
+| createScope | Own subscriptions and finalizers |
+| scoped | Await cleanup on settlement; report cancelled cleanup failures |
+| acquireUseRelease | Synchronous acquisition, Observable release |
+| stream / runStream | Construct / execute typed reactive sequence |
+| fromValues / streamFromEffect | Lift values / a single Effect |
+| mapStream / mapStreamError | Transform stream values / failure |
+| recoverStream | Continue with replacement stream after typed failure |
+| flatMapStream | Sequential effects; terminate on typed failure |
 
-`retryExpected(2)` makes at most three attempts. It does not retry defects. `timeout` uses the optional RxJS scheduler and measures time until the validated outcome is delivered.
-
-All operations are function-first. Combinators are composable with RxJS's standalone `pipe`. The `run` boundary returns a normal Observable, so existing RxJS operators can coordinate executions.
+Combinators are function-first and work with RxJS pipe. The run and runStream boundaries return standard Observables.

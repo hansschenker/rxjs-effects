@@ -9,14 +9,12 @@ type Effect<A, E = never, R = unknown> =
   (environment: R) => Observable<Result<A, E>>;
 ```
 
-An Effect is a function describing a single-outcome computation. The environment is an object of dependencies; expected errors are typed values. Operators compose those contracts, while RxJS manages subscriptions, scheduling, teardown and coordination.
+An Effect describes one outcome. A Stream describes zero or more successes and optionally a terminal typed failure. Both reuse RxJS subscriptions, timing and cancellation.
 
 ## Intuition → Specification → Verification
 
-**Intuition:** a description of a computation that can succeed or fail.
+An expected failure is a typed package, not an RxJS error notification. Operators interpret the package and decide whether to transform, continue, recover or terminate. The verification suite tests contracts, type inference, algebraic laws, time, cancellation and scope finalization.
 
-**Specification:** on subscription, execute the factory; on normal termination, emit exactly one Success or Failure outcome and complete. Defects use the error channel. Unsubscription stops delivery and triggers teardown.
+No additional execution engine. No classes, generators or async/await programming style.
 
-**Verification:** the Vitest suite checks cold execution, typed error unions, dependency intersections, short-circuiting, cardinality, retry, timeout and cancellation.
-
-No new execution runtime. No class declarations, async/await or generator syntax.
+Contributor: **myProfessorAstra-62** (AI-assisted design and implementation).
