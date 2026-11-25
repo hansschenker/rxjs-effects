@@ -1,6 +1,6 @@
 import {
   defer, of, single, map as rxMap, concatMap, catchError, timeout as rxTimeout,
-  repeat, filter, take, throwError, materialize, reduce, subscribeOn, queueScheduler, timer, type Observable, type SchedulerLike
+  repeat, filter, take, throwError, materialize, reduce, queueScheduler, timer, type Observable, type SchedulerLike
 } from "rxjs";
 import { success, failure, type Result } from "./result";
 
@@ -129,11 +129,14 @@ export const retryWith =
     if (policy.kind === "Delayed" && (!Number.isFinite(policy.milliseconds) || policy.milliseconds < 0)) {
       return throwError(() => new RangeError("Invalid retry delay"));
     }
-    const attempts$ = run(source)(environment).pipe(subscribeOn(queueScheduler));
-    return attempts$.pipe(
-      repeat(policy.kind === "Immediate"
-        ? { count: maxRetries + 1 }
-        : { count: maxRetries + 1, delay: () => timer(policy.milliseconds, policy.scheduler) }),
+    // Schedule the repeat notifier, not just the source subscription.
+    // The queue remains active across subsequent retry notifications so
+    // repeat cannot recurse through synchronous source completion.
+    const delay = () => policy.kind === "Immediate"
+      ? timer(0, queueScheduler)
+      : timer(policy.milliseconds, policy.scheduler);
+    return run(source)(environment).pipe(
+      repeat({ count: maxRetries + 1, delay }),
       filter((result, index) => result.kind === "Success" || index === maxRetries),
       take(1)
     );

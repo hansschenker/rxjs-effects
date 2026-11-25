@@ -1,7 +1,7 @@
 import { pipe } from "../src";
 import { describe, it, expect, vi } from "vitest";
 import fc from "fast-check";
-import { of, concat, throwError} from "rxjs";
+import { of, concat, throwError } from "rxjs";
 import { TestScheduler } from "rxjs/testing";
 import { type Effect, type Result, run, succeed, fail, map, flatMap, retryExpected, retryWith, suspend, tryObservable } from "../src";
 const collect = <A,E>(effect: Effect<A,E>) => {
@@ -37,6 +37,16 @@ describe("algebraic laws for pure total projections", () => {
       expectObservable(run(pipe(effect,retryWith({kind:"Delayed",maxRetries:2,milliseconds:10,scheduler})))(undefined))
         .toBe("20ms (a|)", {a:{kind:"Success",value:7}});
     });
+  });
+  it("cancels scheduled retries before their next attempt", () => {
+    const scheduler = new TestScheduler((a,b) => expect(a).toEqual(b));
+    const attempts = vi.fn(() => fail("busy"));
+    scheduler.run(({expectObservable}) => {
+      const effect = pipe(suspend(attempts),
+        retryWith({kind:"Delayed",maxRetries:5,milliseconds:10,scheduler}));
+      expectObservable(run(effect)(undefined), "15ms !").toBe("");
+    });
+    expect(attempts).toHaveBeenCalledTimes(2);
   });
   it("discards provisional values on source error; cardinality defects stay defects", () => {
     const project = vi.fn(() => "Offline" as const);
